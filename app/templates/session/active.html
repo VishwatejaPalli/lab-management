@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Active Session — Lab Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Active Session</h1>
+</div>
+
+<div class="card active-session-card">
+    <div class="session-info-grid">
+        <div class="session-detail">
+            <span class="label">Student</span>
+            <span class="value">{{ user.name }} ({{ user.student_id }})</span>
+        </div>
+        <div class="session-detail">
+            <span class="label">PC</span>
+            <span class="value">{{ session.computer.hostname }}</span>
+        </div>
+        <div class="session-detail">
+            <span class="label">Activity</span>
+            <span class="value">{{ session.activity_type.name | title }}</span>
+        </div>
+        {% if session.course %}
+        <div class="session-detail">
+            <span class="label">Course</span>
+            <span class="value">{{ session.course.code }} — {{ session.course.name }}</span>
+        </div>
+        {% endif %}
+        {% if session.experiment %}
+        <div class="session-detail">
+            <span class="label">Experiment</span>
+            <span class="value">Exp {{ session.experiment.number }}: {{ session.experiment.title }}</span>
+        </div>
+        {% endif %}
+        {% if session.project %}
+        <div class="session-detail">
+            <span class="label">Project</span>
+            <span class="value">{{ session.project.title }}</span>
+        </div>
+        {% endif %}
+        {% if session.research %}
+        <div class="session-detail">
+            <span class="label">Research</span>
+            <span class="value">{{ session.research.title }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="session-timer-wrapper">
+        <span class="timer-label">Session Duration</span>
+        <span id="session-timer" class="session-timer">00:00:00</span>
+    </div>
+
+    <form method="post" action="/session/stop">
+        <input type="hidden" name="session_id" value="{{ session.id }}">
+
+        <div class="form-group">
+            <label>Software Used (select all that apply)</label>
+            <div class="checkbox-grid">
+                {% for sw in software_list %}
+                <label class="checkbox-label">
+                    <input type="checkbox" name="software_ids" value="{{ sw.id }}">
+                    {{ sw.name }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Notes (optional)</label>
+            <textarea id="notes" name="notes" rows="3" placeholder="Any observations or notes..."></textarea>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-danger btn-large">⏹️ STOP SESSION</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    startTimer('{{ session.start_time.isoformat() }}');
+</script>
+{% endblock %}

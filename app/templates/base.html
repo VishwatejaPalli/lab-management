@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lab Management{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+    {% if user is defined and user %}
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🔬 Lab Manager</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/dashboard" class="nav-link">📊 Dashboard</a>
+                {% if user.role == 'student' %}
+                <a href="/session/start" class="nav-link">▶️ New Session</a>
+                <a href="/session/history" class="nav-link">📋 My Sessions</a>
+                {% endif %}
+                {% if user.role in ['admin', 'faculty'] %}
+                <a href="/dashboard" class="nav-link">👥 All Sessions</a>
+                {% endif %}
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-name">{{ user.name }}</span>
+                    <span class="user-role badge badge-{{ user.role }}">{{ user.role | title }}</span>
+                </div>
+                <a href="/logout" class="nav-link logout-link">🚪 Logout</a>
+            </div>
+        </aside>
+        <main class="main-content">
+            {% if error is defined and error %}
+            <div class="alert alert-error">{{ error }}</div>
+            {% endif %}
+            {% if success is defined and success %}
+            <div class="alert alert-success">{{ success }}</div>
+            {% endif %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% else %}
+    <main class="login-wrapper">
+        {% if error is defined and error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+        {% block login_content %}{% endblock %}
+    </main>
+    {% endif %}
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

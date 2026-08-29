@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Start Session — Lab Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Start Lab Session</h1>
+    <p>Select your workstation and activity</p>
+</div>
+
+<div class="card">
+    <form method="post" action="/session/start">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="computer_id">Select PC</label>
+                <select id="computer_id" name="computer_id" required>
+                    <option value="">-- Select a PC --</option>
+                    {% for pc in all_computers %}
+                    <option value="{{ pc.id }}" {% if pc.status != 'available' %}disabled{% endif %}>
+                        {{ pc.hostname }}
+                        {% if pc.status == 'in_use' %}(In Use){% elif pc.status == 'offline' %}(Offline){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="activity_type_id">Activity Type</label>
+                <select id="activity_type_id" name="activity_type_id" required>
+                    <option value="">-- Select Activity --</option>
+                    {% for at in activity_types %}
+                    <option value="{{ at.id }}">{{ at.description if at.description else at.name | title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div id="experiment-fields" class="activity-field" style="display:none;">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="course_id">Course</label>
+                    <select id="course_id" name="course_id">
+                        <option value="0">-- Select Course --</option>
+                        {% for c in courses %}
+                        <option value="{{ c.id }}">{{ c.code }} — {{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="experiment_id">Experiment</label>
+                    <select id="experiment_id" name="experiment_id">
+                        <option value="0">-- Select Experiment --</option>
+                        {% for e in experiments %}
+                        <option value="{{ e.id }}" data-course-id="{{ e.course_id }}">Exp {{ e.number }}: {{ e.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="project-fields" class="activity-field" style="display:none;">
+            <div class="form-group">
+                <label for="project_id">Project</label>
+                <select id="project_id" name="project_id">
+                    <option value="0">-- Select Project --</option>
+                    {% for p in projects %}
+                    <option value="{{ p.id }}">{{ p.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div id="research-fields" class="activity-field" style="display:none;">
+            <div class="form-group">
+                <label for="research_id">Research Topic</label>
+                <select id="research_id" name="research_id">
+                    <option value="0">-- Select Research --</option>
+                    {% for r in research_list %}
+                    <option value="{{ r.id }}">{{ r.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-large">▶️ START SESSION</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

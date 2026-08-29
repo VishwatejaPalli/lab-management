@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: lab_postgres
+    environment:
+      POSTGRES_USER: labadmin
+      POSTGRES_PASSWORD: labpass123
+      POSTGRES_DB: labmanagement
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:

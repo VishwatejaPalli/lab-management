@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Faculty Dashboard — Lab Management{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Faculty Dashboard</h1>
+    <p>{{ user.name }} · {{ user.department or '' }}</p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-value">{{ stats.total_pcs }}</span>
+        <span class="stat-label">Total PCs</span>
+    </div>
+    <div class="stat-card stat-active">
+        <span class="stat-value">{{ stats.active_pcs }}</span>
+        <span class="stat-label">In Use</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value">{{ stats.today_usage_hours }}h</span>
+        <span class="stat-label">Today's Usage</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-value">{{ stats.total_sessions_today }}</span>
+        <span class="stat-label">Sessions Today</span>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Recent Lab Sessions</h2>
+    {% if sessions %}
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>PC</th>
+                    <th>Activity</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in sessions %}
+                <tr>
+                    <td>{{ s.student.name }} ({{ s.student.student_id }})</td>
+                    <td>{{ s.computer.hostname }}</td>
+                    <td>{{ s.activity_type.name | title }}</td>
+                    <td>{{ s.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{% if s.duration_minutes %}{{ s.duration_minutes }} min{% else %}—{% endif %}</td>
+                    <td>
+                        {% if s.end_time %}
+                        <span class="badge badge-completed">Completed</span>
+                        {% else %}
+                        <span class="badge badge-active">Active</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="empty-state">No sessions recorded yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

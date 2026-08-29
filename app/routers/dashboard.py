@@ -1,0 +1,48 @@
+from fastapi import APIRouter, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+from app.database import get_db
+from app.routers.auth import get_current_user
+from app.models.user import User
+from app.models.session import Session
+from app.models.computer import Computer
+from app.models.software import Software
+from app.models.session_software import SessionSoftware
+from app.services.session_service import (
+    get_dashboard_stats,
+    get_student_sessions,
+    get_active_session,
+    get_all_sessions,
+)
+
+router = APIRouter(tags=["dashboard"])
+
+
+@router.get("/dashboard")
+async def dashboard(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.role == "admin":
+        stats = await get_dashboard_stats(db)
+        recent_sessions = await get_all_sessions(db, limit=20)
+        return request.app.state.templates.TemplateResponse(
+            "dashboard/admin.html",
+            {"request": request, "user": current_user, "stats": stats, "sessions": recent_sessions},
+        )
+    elif current_user.role == "faculty":
+        stats = await get_dashboard_stats(db)
+        recent_sessions = await get_all_sessions(db, limit=20)
+        return request.app.state.templates.TemplateResponse(
+            "dashboard/faculty.html",
+            {"request": request, "user": current_user, "stats": stats, "sessions": recent_sessions},
+        )
+    else:
+        # Student
+        active = await get_active_session(db, current_user.id)
+        sessions = await get_student_sessions(db, current_user.id)
+        return request.app.state.templates.TemplateResponse(
+            "dashboard/student.html",
+            {"request": request, "user": current_user, "active_session": active, "sessions": sessions},
+        )
