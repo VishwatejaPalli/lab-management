@@ -17,3 +17,4 @@ class Course(Base):
     experiments = relationship("Experiment", back_populates="course")
     projects = relationship("Project", back_populates="course")
     sessions = relationship("Session", back_populates="course")
+    lab_classes = relationship("LabClass", back_populates="course")

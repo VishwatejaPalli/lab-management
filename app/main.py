@@ -6,30 +6,28 @@ from contextlib import asynccontextmanager
 import os
 
 from app.routers import auth, sessions, dashboard, pages
+from app.routers import operations, agents
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     yield
-    # Shutdown
 
 
-app = FastAPI(title="Lab Management System", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Lab Management System", version="2.0.0", lifespan=lifespan)
 
-# Static files
 base_dir = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(base_dir, "static")), name="static")
 
-# Templates
 templates = Jinja2Templates(directory=os.path.join(base_dir, "templates"))
 app.state.templates = templates
 
-# Routers
 app.include_router(pages.router)
 app.include_router(auth.router)
 app.include_router(sessions.router)
 app.include_router(dashboard.router)
+app.include_router(operations.router)
+app.include_router(agents.router)
 
 
 @app.exception_handler(303)

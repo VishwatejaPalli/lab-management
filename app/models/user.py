@@ -21,3 +21,6 @@ class User(Base):
     sessions = relationship("Session", back_populates="student")
     projects_created = relationship("Project", back_populates="created_by_user")
     supervised_research = relationship("Research", back_populates="supervisor")
+    pc_assignments = relationship("PCAssignment", back_populates="student")
+    lab_entries = relationship("LabEntry", back_populates="student")
+    lab_classes = relationship("LabClass", back_populates="faculty")

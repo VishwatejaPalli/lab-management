@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
-from app.routers.auth import get_current_user
+from app.routers.auth import get_current_user, require_role
 from app.models.user import User
 from app.models.computer import Computer
 from app.models.software import Software
@@ -13,48 +13,61 @@ from app.models.project import Project
 from app.models.research import Research
 from app.models.activity_type import ActivityType
 from app.services.session_service import start_session, stop_session, get_active_session
+from app.services.operations_service import get_active_assignment_for_student
 from typing import Optional
 
 router = APIRouter(prefix="/session", tags=["sessions"])
 
 
-@router.get("/start")
-async def session_start_page(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    # Check for active session
-    active = await get_active_session(db, current_user.id)
-    if active:
-        return RedirectResponse(url="/session/active", status_code=303)
-
-    # Load form data
-    computers = (await db.execute(select(Computer).where(Computer.status == "available").order_by(Computer.hostname))).scalars().all()
+async def _load_start_form_data(db: AsyncSession, current_user: User):
     all_computers = (await db.execute(select(Computer).order_by(Computer.hostname))).scalars().all()
+    assignment = await get_active_assignment_for_student(db, current_user.id)
+
+    if assignment:
+        computers = [assignment.computer] if assignment.computer else []
+    else:
+        computers = (await db.execute(select(Computer).where(Computer.status == "available").order_by(Computer.hostname))).scalars().all()
+
     activity_types = (await db.execute(select(ActivityType))).scalars().all()
     courses = (await db.execute(select(Course).order_by(Course.code))).scalars().all()
     experiments = (await db.execute(select(Experiment).order_by(Experiment.course_id, Experiment.number))).scalars().all()
     projects = (await db.execute(select(Project).order_by(Project.title))).scalars().all()
     research_list = (await db.execute(select(Research).order_by(Research.title))).scalars().all()
 
+    return {
+        "assignment": assignment,
+        "computers": list(computers),
+        "all_computers": list(all_computers),
+        "activity_types": list(activity_types),
+        "courses": list(courses),
+        "experiments": list(experiments),
+        "projects": list(projects),
+        "research_list": list(research_list),
+    }
+
+
+@router.get("/start", dependencies=[Depends(require_role("student"))])
+async def session_start_page(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    active = await get_active_session(db, current_user.id)
+    if active:
+        return RedirectResponse(url="/session/active", status_code=303)
+
+    data = await _load_start_form_data(db, current_user)
     return request.app.state.templates.TemplateResponse(
         "session/start.html",
         {
             "request": request,
             "user": current_user,
-            "computers": list(computers),
-            "all_computers": list(all_computers),
-            "activity_types": list(activity_types),
-            "courses": list(courses),
-            "experiments": list(experiments),
-            "projects": list(projects),
-            "research_list": list(research_list),
+            **data,
         },
     )
 
 
-@router.post("/start")
+@router.post("/start", dependencies=[Depends(require_role("student"))])
 async def session_start_action(
     request: Request,
     computer_id: int = Form(...),
@@ -76,17 +89,24 @@ async def session_start_action(
             experiment_id=experiment_id if experiment_id and experiment_id > 0 else None,
             project_id=project_id if project_id and project_id > 0 else None,
             research_id=research_id if research_id and research_id > 0 else None,
+            started_by_agent=False,
         )
         return RedirectResponse(url="/session/active", status_code=303)
     except ValueError as e:
+        data = await _load_start_form_data(db, current_user)
         return request.app.state.templates.TemplateResponse(
             "session/start.html",
-            {"request": request, "user": current_user, "error": str(e), "computers": [], "all_computers": [], "activity_types": [], "courses": [], "experiments": [], "projects": [], "research_list": []},
+            {
+                "request": request,
+                "user": current_user,
+                "error": str(e),
+                **data,
+            },
             status_code=400,
         )
 
 
-@router.get("/active")
+@router.get("/active", dependencies=[Depends(require_role("student"))])
 async def session_active_page(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -109,7 +129,7 @@ async def session_active_page(
     )
 
 
-@router.post("/stop")
+@router.post("/stop", dependencies=[Depends(require_role("student"))])
 async def session_stop_action(
     request: Request,
     session_id: int = Form(...),
@@ -127,13 +147,14 @@ async def session_stop_action(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/history")
+@router.get("/history", dependencies=[Depends(require_role("student"))])
 async def session_history(
     request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     from app.services.session_service import get_student_sessions
+
     sessions = await get_student_sessions(db, current_user.id)
     return request.app.state.templates.TemplateResponse(
         "session/history.html",
